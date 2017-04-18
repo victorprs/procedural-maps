@@ -51,17 +51,34 @@ iren.SetRenderWindow(renWin)
 points = vtk.vtkPoints()
 vertices = vtk.vtkCellArray()
 
-for x in xrange(MAX):
-    for y in xrange(MAX):
+for y in xrange(MAX):
+    for x in xrange(MAX):
         pid = points.InsertNextPoint(x, heightmap[x,y], y)
-        vertices.InsertNextCell(1)
-        vertices.InsertCellPoint(pid)
+        # points.InsertNextPoint(x, heightmap[x,y], y)
+        # vertices.InsertNextCell(1)
+        # vertices.InsertCellPoint(pid)
 
+
+triangles = vtk.vtkCellArray()
+for y in xrange(MAX-1):
+    for x in xrange(MAX-1):
+        triangle = vtk.vtkTriangle()
+        triangle.GetPointIds().SetId(0, y*MAX+x)
+        triangle.GetPointIds().SetId(1, y*MAX+x+1)
+        triangle.GetPointIds().SetId(2, (y+1)*MAX+x)
+        triangles.InsertNextCell(triangle)
+        
+        triangle = vtk.vtkTriangle()
+        triangle.GetPointIds().SetId(0, y*MAX+x+1)
+        triangle.GetPointIds().SetId(1, (y+1)*MAX+x)
+        triangle.GetPointIds().SetId(2, (y+1)*MAX+x+1)
+        triangles.InsertNextCell(triangle)
 
 # polydata object
 polyData = vtk.vtkPolyData()
 polyData.SetPoints(points)
-polyData.SetVerts(vertices)
+polyData.SetPolys(triangles)
+# polyData.SetVerts(vertices)
 
 
 
