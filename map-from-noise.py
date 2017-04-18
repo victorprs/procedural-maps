@@ -6,6 +6,7 @@ import vtk
 MAX = 512
 OCTAVES = 4
 FREQUENCY = 16.0 * OCTAVES
+EXPONENT = 1.0
 
 
 def normalize_to_8bit(value):
@@ -24,12 +25,14 @@ def noise_heightmap():
     height = numpy.zeros((MAX, MAX), numpy.uint8)
     for x in xrange(MAX):
         for y in xrange(MAX):
-            height[x, y] = normalize_to_8bit(noise.pnoise2(x / FREQUENCY, y / FREQUENCY, OCTAVES))
+            value = normalize(noise.pnoise2(x / FREQUENCY, y / FREQUENCY, OCTAVES))
+            value = pow(value, EXPONENT)
+            height[x, y] = normalize_to_8bit(value)
     return height
 
 
 heightmap = noise_heightmap()
-print (heightmap)
+# print (heightmap)
 
 # img = Image.fromarray(heightmap, 'L')
 # img.save('my.png')
