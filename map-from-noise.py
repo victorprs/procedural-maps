@@ -1,37 +1,11 @@
-import noise
-import numpy
+from noise_heightmap import NoiseHeightmap
 from PIL import Image
 import vtk
 
 MAX = 512
-OCTAVES = 4
-FREQUENCY = 16.0 * OCTAVES
-EXPONENT = 1.0
+DENSITY = 1.0
 
-
-def normalize_to_8bit(value):
-    return (value * 0.5 + 0.5) * 256
-
-
-def normalize_to_16bit(value):
-    return (value * 0.5 + 0.5) * 65536
-
-
-def normalize(value):
-    return value * 0.5 + 0.5
-
-
-def noise_heightmap():
-    height = numpy.zeros((MAX, MAX), numpy.uint8)
-    for x in xrange(MAX):
-        for y in xrange(MAX):
-            value = normalize(noise.pnoise2(x / FREQUENCY, y / FREQUENCY, OCTAVES))
-            value = pow(value, EXPONENT)
-            height[x, y] = normalize_to_8bit(value)
-    return height
-
-
-heightmap = noise_heightmap()
+heightmap = NoiseHeightmap.noise_heightmap()
 # print (heightmap)
 
 # img = Image.fromarray(heightmap, 'L')
@@ -67,7 +41,7 @@ for y in xrange(MAX-1):
         triangle.GetPointIds().SetId(1, y*MAX+x+1)
         triangle.GetPointIds().SetId(2, (y+1)*MAX+x)
         triangles.InsertNextCell(triangle)
-        
+
         triangle = vtk.vtkTriangle()
         triangle.GetPointIds().SetId(0, y*MAX+x+1)
         triangle.GetPointIds().SetId(1, (y+1)*MAX+x)
