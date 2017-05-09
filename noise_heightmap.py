@@ -15,8 +15,8 @@ class NoiseHeightmap():
         return value * 0.5 + 0.5
 
     @staticmethod
-    def noise_heightmap(max=512, octaves=4, frequency=16.0, exponent=1.0, max_height=256):
-        height = numpy.zeros((max, max), numpy.uint8)
+    def noise_heightmap(max=512, octaves=4, frequency=16.0, exponent=1.0, max_height=255):
+        height = numpy.zeros((max, max), numpy.uint16)
         for x in xrange(max):
             for y in xrange(max):
                 value = NoiseHeightmap.normalize(noise.pnoise2(x / (frequency * octaves), y / (frequency * octaves), octaves))

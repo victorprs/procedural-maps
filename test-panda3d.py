@@ -27,7 +27,7 @@ class MyApp(ShowBase):
         color = GeomVertexWriter(vdata, 'color')
 
         # fill vertices
-        height = NoiseHeightmap.noise_heightmap()
+        height = NoiseHeightmap.noise_heightmap(MAX)
         for x in xrange(MAX):
             for y in xrange(MAX):
                 vertex.addData3f(x, y, height[x,y])
@@ -38,18 +38,18 @@ class MyApp(ShowBase):
                 if (x == MAX - 1 or y == MAX - 1 or x == 0 or y == 0):
                     normal.addData3f(1,1,1)
                     continue
-                hL = height[x-1,y]
-                hR = height[x+1,y]
-                hD = height[x,y+1]
-                hU = height[x,y-1]
-                n = numpy.zeros(3, numpy.uint)
+                hL = int(height[x-1,y])
+                hR = int(height[x+1,y])
+                hD = int(height[x,y+1])
+                hU = int(height[x,y-1])
+                n = numpy.zeros(3, numpy.int32)
                 n[0] = hL - hR
                 # if (n[0] < 0):
                 #     print n[0]
                 n[1] = hU - hD
                 # if (n[1] < 0):
                     # print n[1]
-                n[2] = 255
+                n[2] = 1
                 # print n
                 norm = math.sqrt(n[0]**2 + n[1]**2 + n[2]**2)
                 # print norm
