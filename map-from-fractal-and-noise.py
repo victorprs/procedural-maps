@@ -11,6 +11,8 @@ from direct.task import Task
 MAX = 512
 DENSITY = 1.0
 
+# loadPrcFileData("", "fullscreen 0")
+# loadPrcFileData("", "win-size 960 720")
 
 class MyApp(ShowBase):
     def __init__(self):
@@ -30,7 +32,6 @@ class MyApp(ShowBase):
         
         # fill vertices
         height = FractalHeightmap.dsm_heightmap(MAX) * 0.5 + NoiseHeightmap.noise_heightmap(MAX+1) * 0.5
-        print height
         
         maxSqrDistance = (0 - MAX / float(2)) ** 2 + (0 - MAX / float(2)) ** 2
         maxHeight = numpy.amax(height)
@@ -135,7 +136,13 @@ class MyApp(ShowBase):
         self.accept("d-up", self.setKey, ["d", False])
         
         self.taskMgr.add(self.cameraControl, "Camera Control")
-    
+        
+        props = WindowProperties()
+        props.setCursorHidden(True)
+        props.setMouseMode(WindowProperties.M_confined)
+        self.win.requestProperties(props)
+        self.win.movePointer(0, int(800 / 2), int(600 / 2))
+
     def setKey(self, key, value):
         self.keyMap[key] = value
     
@@ -146,12 +153,11 @@ class MyApp(ShowBase):
         
         if (self.mouseWatcherNode.hasMouse() == True):
             mpos = self.mouseWatcherNode.getMouse()
-            self.camera.setP(mpos.getY() * 30)
-            self.camera.setH(mpos.getX() * -50)
-            if (mpos.getX() < 0.1 and mpos.getX() > -0.1):
-                self.cameraModel.setH(self.cameraModel.getH())
-            else:
-                self.cameraModel.setH(self.cameraModel.getH() + mpos.getX() * -1)
+            if (mpos.getX() != 0 or mpos.getY() != 0):
+                self.cameraModel.setH(self.cameraModel.getH() + mpos.getX() * -50)
+                self.cameraModel.setP(self.cameraModel.getP() + mpos.getY() * 30)
+            props = self.win.getProperties()
+            self.win.movePointer(0,int(props.getXSize() / 2),int(props.getYSize() / 2))
         
         if (self.keyMap["w"] == True):
             self.cameraModel.setY(self.cameraModel, 100 * dt)
