@@ -44,9 +44,9 @@ class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         
+        texture = self.loader.loadTexture('terrain-color.jpg')
         # create GeomVertexFormat
-        format = GeomVertexFormat.getV3n3c4()
-        # format = GeomVertexFormat.getV3c4()
+        format = GeomVertexFormat.getV3n3t2()
         # create GeomVertexData
         vdata = GeomVertexData('name', format, Geom.UHStatic)
         # set the number of rows, which in this case is the number of vertices
@@ -54,14 +54,24 @@ class MyApp(ShowBase):
         # create VertexWriter
         vertex = GeomVertexWriter(vdata, 'vertex')
         normal = GeomVertexWriter(vdata, 'normal')
-        color = GeomVertexWriter(vdata, 'color')
+        texcoord = GeomVertexWriter(vdata, 'texcoord')
         
         # fill vertices
         height_vertices = NoiseHeightmap.height_from_coords(all_vertices)
         
+        maxSqrDistance = (0 - MAX/float(2)) **2 + (0 - MAX/float(2)) **2
+        maxHeight = int(np.amax(height_vertices))
+        minHeight = int(np.amin(height_vertices))
+        maxHeightDiff = math.fabs(minHeight - maxHeight)
         for i in xrange(all_vertices.shape[0]):
             vertex.addData3f(all_vertices[i][0], all_vertices[i][1], height_vertices[i])
-            color.addData4f(.5, 1, 1, 1)
+            
+            sqrDistance = (all_vertices[i][0] - MAX / float(2)) ** 2 + (all_vertices[i][1] - MAX / float(2)) ** 2
+            heightDiff = math.fabs(int(height_vertices[i]) - maxHeight)
+            humidity = .5 * (sqrDistance / maxSqrDistance) + .5 * (heightDiff / maxHeightDiff)
+            temperature = heightDiff / maxHeightDiff
+
+            texcoord.addData2f(temperature, humidity)
         
         # fill geoprimitive which are triangles
         triangles = GeomTriangles(Geom.UH_static)
@@ -99,7 +109,7 @@ class MyApp(ShowBase):
 
         for i in xrange(all_vertices.shape[0]):
             norm = math.sqrt(normals[i][0] ** 2 + normals[i][1] ** 2 + normals[i][2] ** 2)
-            if norm == 0: # no caso de ponto sem triângulos
+            if norm == 0: # no caso de ponto sem triangulos
                 n = [0,0,0]
             else:
                 n = [normals[i][0] / norm, normals[i][1] / norm, normals[i][2] / norm]
@@ -114,9 +124,10 @@ class MyApp(ShowBase):
         
         terrainNP = self.render.attachNewNode(terrainNode)
         terrainNP.setPos(-MAX / 2, -10, -MAX / 2)
+        terrainNP.setTexture(texture, 1)
         terrainNP.setTwoSided(True)
-        terrainNP.setShaderAuto()
-        terrainNP.setDepthOffset(1)
+        # terrainNP.setShaderAuto()
+        # terrainNP.setDepthOffset(1)
         
         # ambient light
         ambientLight = AmbientLight('ambientLight')

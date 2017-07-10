@@ -15,9 +15,9 @@ class MyApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
         
+        texture = self.loader.loadTexture('terrain-color.jpg')
         # create GeomVertexFormat
-        # format = GeomVertexFormat.getV3c4()
-        format = GeomVertexFormat.getV3n3c4()
+        format = GeomVertexFormat.getV3n3t2()
         # create GeomVertexData
         vdata = GeomVertexData('name', format, Geom.UHStatic)
         # set the number of rows, which in this case is the number of vertices
@@ -25,14 +25,25 @@ class MyApp(ShowBase):
         # create VertexWriter
         vertex = GeomVertexWriter(vdata, 'vertex')
         normal = GeomVertexWriter(vdata, 'normal')
-        color = GeomVertexWriter(vdata, 'color')
+        texcoord = GeomVertexWriter(vdata, 'texcoord')
         
         # fill vertices
         height = FractalHeightmap.dsm_heightmap(MAX)
+
+        maxSqrDistance = (0 - MAX/float(2)) **2 + (0 - MAX/float(2)) **2
+        maxHeight = int(numpy.amax(height))
+        minHeight = int(numpy.amin(height))
+        maxHeightDiff = math.fabs(minHeight - maxHeight)
         for x in xrange(MAX):
             for y in xrange(MAX):
                 vertex.addData3f(x, y, height[x, y])
-                color.addData4f(.5, 1, 1, 1)
+                
+                sqrDistance = (x - MAX / float(2)) ** 2 + (y - MAX / float(2)) ** 2
+                heightDiff = math.fabs(int(height[x,y]) - maxHeight)
+                humidity = .5 * (sqrDistance / maxSqrDistance) + .5 * (heightDiff / maxHeightDiff)
+                temperature = heightDiff / maxHeightDiff
+
+                texcoord.addData2f(temperature, humidity)
         
         for x in xrange(MAX):
             for y in xrange(MAX):
@@ -79,6 +90,7 @@ class MyApp(ShowBase):
         
         terrainNP = self.render.attachNewNode(terrainNode)
         terrainNP.setPos(-MAX / 2, -10, -MAX / 2)
+        terrainNP.setTexture(texture, 1)
         # terrainNP.setTwoSided(True)
         # terrainNP.setShaderAuto()
         # terrainNP.setDepthOffset(1)
