@@ -155,6 +155,64 @@ class MyApp(ShowBase):
         
         
         self.trackball.node().setPos(0, 250, 100)
+
+        self.disableMouse()
+
+        self.cameraModel = self.loader.loadModel("models/camera")
+        self.cameraModel.reparentTo(self.render)
+        self.cameraModel.setPos(0, 15, 0)
+
+        self.camera.reparentTo(self.cameraModel)
+        self.camera.setY(self.camera, 5)
+
+        self.keyMap = {"w": False, "s": False, "a": False, "d": False, }
+
+        self.accept("w", self.setKey, ["w", True])
+        self.accept("s", self.setKey, ["s", True])
+        self.accept("a", self.setKey, ["a", True])
+        self.accept("d", self.setKey, ["d", True])
+
+        self.accept("w-up", self.setKey, ["w", False])
+        self.accept("s-up", self.setKey, ["s", False])
+        self.accept("a-up", self.setKey, ["a", False])
+        self.accept("d-up", self.setKey, ["d", False])
+
+        self.taskMgr.add(self.cameraControl, "Camera Control")
+
+    def setKey(self, key, value):
+        self.keyMap[key] = value
+
+    def cameraControl(self, task):
+        dt = globalClock.getDt()
+        if (dt > .20):
+            return task.cont
+    
+        if (self.mouseWatcherNode.hasMouse() == True):
+            mpos = self.mouseWatcherNode.getMouse()
+            self.camera.setP(mpos.getY() * 30)
+            self.camera.setH(mpos.getX() * -50)
+            if (mpos.getX() < 0.1 and mpos.getX() > -0.1):
+                self.cameraModel.setH(self.cameraModel.getH())
+            else:
+                self.cameraModel.setH(self.cameraModel.getH() + mpos.getX() * -1)
+    
+        if (self.keyMap["w"] == True):
+            self.cameraModel.setY(self.cameraModel, 100 * dt)
+            print("camera moving forward")
+        if (self.keyMap["s"] == True):
+            self.cameraModel.setY(self.cameraModel, -100 * dt)
+            print("camera moving backwards")
+        if (self.keyMap["a"] == True):
+            self.cameraModel.setX(self.cameraModel, -100 * dt)
+            print("camera moving left")
+        if (self.keyMap["d"] == True):
+            self.cameraModel.setX(self.cameraModel, 100 * dt)
+            print("camera moving right")
+        return task.cont
+
+    def moveCamera(self):
+        print self.camera.getPos()
+        self.camera.setPos(self.camera.getPos[0] - 1, self.camera.getPos[1], self.camera.getPos[2])
         # self.trackball.node().setHpr()
 
         # self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")

@@ -56,17 +56,10 @@ class MyApp(ShowBase):
                 hU = int(height[x, y - 1])
                 n = numpy.zeros(3, numpy.int32)
                 n[0] = hL - hR
-                # if (n[0] < 0):
-                #     print n[0]
                 n[1] = hU - hD
-                # if (n[1] < 0):
-                # print n[1]
                 n[2] = 1
-                # print n
                 norm = math.sqrt(n[0] ** 2 + n[1] ** 2 + n[2] ** 2)
-                # print norm
                 n = [n[0] / norm, n[1] / norm, n[2] / norm]
-                # print n
                 normal.addData3f(n[0], n[1], n[2])
         
         # fill geoprimitive which are triangles
@@ -91,9 +84,6 @@ class MyApp(ShowBase):
         terrainNP = self.render.attachNewNode(terrainNode)
         terrainNP.setPos(-MAX / 2, -10, -MAX / 2)
         terrainNP.setTexture(texture, 1)
-        # terrainNP.setTwoSided(True)
-        # terrainNP.setShaderAuto()
-        # terrainNP.setDepthOffset(1)
         
         # ambient light
         ambientLight = AmbientLight('ambientLight')
@@ -120,6 +110,64 @@ class MyApp(ShowBase):
         
         
         self.trackball.node().setPos(0, 250, 100)
+
+        self.disableMouse()
+
+        self.cameraModel = self.loader.loadModel("models/camera")
+        self.cameraModel.reparentTo(self.render)
+        self.cameraModel.setPos(0, 15, 0)
+
+        self.camera.reparentTo(self.cameraModel)
+        self.camera.setY(self.camera, 5)
+
+        self.keyMap = {"w": False, "s": False, "a": False, "d": False, }
+
+        self.accept("w", self.setKey, ["w", True])
+        self.accept("s", self.setKey, ["s", True])
+        self.accept("a", self.setKey, ["a", True])
+        self.accept("d", self.setKey, ["d", True])
+
+        self.accept("w-up", self.setKey, ["w", False])
+        self.accept("s-up", self.setKey, ["s", False])
+        self.accept("a-up", self.setKey, ["a", False])
+        self.accept("d-up", self.setKey, ["d", False])
+
+        self.taskMgr.add(self.cameraControl, "Camera Control")
+
+    def setKey(self, key, value):
+        self.keyMap[key] = value
+
+    def cameraControl(self, task):
+        dt = globalClock.getDt()
+        if (dt > .20):
+            return task.cont
+    
+        if (self.mouseWatcherNode.hasMouse() == True):
+            mpos = self.mouseWatcherNode.getMouse()
+            self.camera.setP(mpos.getY() * 30)
+            self.camera.setH(mpos.getX() * -50)
+            if (mpos.getX() < 0.1 and mpos.getX() > -0.1):
+                self.cameraModel.setH(self.cameraModel.getH())
+            else:
+                self.cameraModel.setH(self.cameraModel.getH() + mpos.getX() * -1)
+    
+        if (self.keyMap["w"] == True):
+            self.cameraModel.setY(self.cameraModel, 100 * dt)
+            print("camera moving forward")
+        if (self.keyMap["s"] == True):
+            self.cameraModel.setY(self.cameraModel, -100 * dt)
+            print("camera moving backwards")
+        if (self.keyMap["a"] == True):
+            self.cameraModel.setX(self.cameraModel, -100 * dt)
+            print("camera moving left")
+        if (self.keyMap["d"] == True):
+            self.cameraModel.setX(self.cameraModel, 100 * dt)
+            print("camera moving right")
+        return task.cont
+
+    def moveCamera(self):
+        print self.camera.getPos()
+        self.camera.setPos(self.camera.getPos[0] - 1, self.camera.getPos[1], self.camera.getPos[2])
         # self.trackball.node().setHpr()
         #
         #     self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
