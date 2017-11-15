@@ -10,6 +10,7 @@ from direct.task import Task
 MAX = 512
 DENSITY = 1.0
 
+import time
 
 class MyApp(ShowBase):
     def __init__(self):
@@ -27,9 +28,13 @@ class MyApp(ShowBase):
         normal = GeomVertexWriter(vdata, 'normal')
         texcoord = GeomVertexWriter(vdata, 'texcoord')
         
+        init_time = time.clock()
         # fill vertices
         height = FractalHeightmap.dsm_heightmap(MAX)
-
+        final_time = time.clock()
+        print "time to generate heightmap:",final_time - init_time
+        
+        init_time = time.clock()
         maxSqrDistance = (0 - MAX/float(2)) **2 + (0 - MAX/float(2)) **2
         maxHeight = int(numpy.amax(height))
         minHeight = int(numpy.amin(height))
@@ -44,7 +49,10 @@ class MyApp(ShowBase):
                 temperature = heightDiff / maxHeightDiff
 
                 texcoord.addData2f(temperature, humidity)
-        
+        final_time = time.clock()
+        print "time to texturing:",final_time - init_time
+
+        init_time = time.clock()
         for x in xrange(MAX):
             for y in xrange(MAX):
                 if (x == MAX - 1 or y == MAX - 1 or x == 0 or y == 0):
@@ -54,18 +62,24 @@ class MyApp(ShowBase):
                 hR = int(height[x + 1, y])
                 hD = int(height[x, y + 1])
                 hU = int(height[x, y - 1])
-                n = numpy.zeros(3, numpy.int32)
+                n = numpy.zeros(3)
+                # n = numpy.zeros(3, numpy.int32)
                 n[0] = hL - hR
                 n[1] = hU - hD
                 n[2] = 1
                 norm = math.sqrt(n[0] ** 2 + n[1] ** 2 + n[2] ** 2)
                 n = [n[0] / norm, n[1] / norm, n[2] / norm]
                 normal.addData3f(n[0], n[1], n[2])
+        final_time = time.clock()
+        print "time to normals:", final_time - init_time
         
+        init_time = time.clock()
         # fill geoprimitive which are triangles
         triangles = GeomTriangles(Geom.UH_static)
+        n_tri = 0
         for y in xrange(MAX - 1):
             for x in xrange(MAX - 1):
+                n_tri = n_tri + 2
                 triangles.addVertices(y * MAX + x,
                                       (y + 1) * MAX + x,
                                       y * MAX + x + 1)
@@ -73,6 +87,9 @@ class MyApp(ShowBase):
                 triangles.addVertices(y * MAX + x + 1,
                                       (y + 1) * MAX + x,
                                       (y + 1) * MAX + x + 1)
+        final_time = time.clock()
+        print "time to triangulate:",final_time - init_time
+        print "# triangles = ", n_tri
         
         # specifics of panda3d, geom and geomnode and scene graph
         terrainGeom = Geom(vdata)
@@ -97,7 +114,7 @@ class MyApp(ShowBase):
         # self.directionalLight.getLens().setFov(90)
         self.directionalLight.setShadowCaster(True, 4096, 4096)
         self.directionalLight.getLens().setNearFar(.1, 1000)
-        self.directionalLight.showFrustum()
+        # self.directionalLight.showFrustum()
         self.directionalLightNP = self.render.attachNewNode(self.directionalLight)
         self.directionalLightNP.setPos(20, 20, 100)
         self.directionalLightNP.lookAt(terrainNP)

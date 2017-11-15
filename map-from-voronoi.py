@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 
 from noise_heightmap import NoiseHeightmap
 
-n_points=10000
+n_points=88000
 MAX = 512
 
-# points = np.random.randint(0, MAX, (n_points, 2))
+import time
+
+init_time = time.clock()
 points = np.random.rand(n_points, 2) * MAX
 voronoi = sp.Voronoi(points)
 to_remove = []
@@ -32,6 +34,8 @@ new_vertices = np.delete(voronoi.vertices, to_remove, 0)
 n_vertices = voronoi.points.shape[0] + new_vertices.shape[0]
 # plt.show()
 all_vertices = np.append(new_vertices, points, 0)
+final_time = time.clock()
+t1 = final_time - init_time
 
 
 from panda3d.core import *
@@ -56,9 +60,13 @@ class MyApp(ShowBase):
         normal = GeomVertexWriter(vdata, 'normal')
         texcoord = GeomVertexWriter(vdata, 'texcoord')
         
+        init_time = time.clock()
         # fill vertices
         height_vertices = NoiseHeightmap.height_from_coords(all_vertices)
-        
+        final_time = time.clock()
+        print "time to generate heightmap:",final_time - init_time
+
+        init_time = time.clock()
         maxSqrDistance = (0 - MAX/float(2)) **2 + (0 - MAX/float(2)) **2
         maxHeight = int(np.amax(height_vertices))
         minHeight = int(np.amin(height_vertices))
@@ -72,12 +80,15 @@ class MyApp(ShowBase):
             temperature = heightDiff / maxHeightDiff
 
             texcoord.addData2f(temperature, humidity)
-        
+        final_time = time.clock()
+        print "time to texturing:",final_time - init_time
+
+        init_time = time.clock()
         # fill geoprimitive which are triangles
         triangles = GeomTriangles(Geom.UH_static)
         
-        normals = np.zeros((len(all_vertices), 3))
-        
+        normals = [ [.0,.0,.0] for i in xrange(len(all_vertices)) ]
+        # np.zeros((len(all_vertices), 3))
         for p_index in xrange(len(voronoi.point_region)):
             p_region_index = voronoi.point_region[p_index]
             region = voronoi.regions[p_region_index]
@@ -95,24 +106,62 @@ class MyApp(ShowBase):
                          all_vertices[len(new_vertices) + p_index][1],
                          height_vertices[len(new_vertices) + p_index]]
                     
-                    cross_product = np.cross(np.subtract(v1,v2), np.subtract(v2,p))
+                    s1 = [v1[0] - v2[0],v1[1] - v2[1],v1[2] - v2[2]]
+                    s2 = [v2[0] - p[0],v2[1] - p[1],v2[2] - p[2]]
+                    
+                    cross_product = [((s1[1] * s2[2]) - (s1[2] * s2[1])),
+                                     ((s1[2] * s2[0]) - (s1[0] * s2[2])),
+                                     ((s1[0] * s2[1]) - (s1[1] * s2[0]))]
+                        # np.cross(np.subtract(v1,v2), np.subtract(v2,p))
                     if (cross_product[2] < 0): #inverte o sinal
-                        cross_product *= -1
-                    normals[new_indices[vert_index1]] += cross_product
-                    normals[new_indices[vert_index2]] += cross_product
-                    normals[len(new_vertices) + p_index] += cross_product
+                        cross_product = [cross_product[0]*-1,cross_product[1]*-1,cross_product[2]*-1]
+                    # initi = time.clock()
+                    normals[new_indices[vert_index1]] = [normals[new_indices[vert_index1]][0] + cross_product[0],
+                                                         normals[new_indices[vert_index1]][1] + cross_product[1],
+                                                         normals[new_indices[vert_index1]][2] + cross_product[2]]
+                    normals[new_indices[vert_index2]] = [normals[new_indices[vert_index2]][0] + cross_product[0],
+                                                         normals[new_indices[vert_index2]][1] + cross_product[1],
+                                                         normals[new_indices[vert_index2]][2] + cross_product[2]]
+                    # normals[len(new_vertices) + p_index] = cross_product
+                    normals[len(new_vertices) + p_index] = [normals[len(new_vertices) + p_index][0] + cross_product[0],
+                                                         normals[len(new_vertices) + p_index][1] + cross_product[1],
+                                                         normals[len(new_vertices) + p_index][2] + cross_product[2]]
+
+                    # n_tri = n_tri + 1
+                    # triangles.addVertices(new_indices[vert_index1],
+                    #                       new_indices[vert_index2],
+                    #                       len(new_vertices) + p_index)
+                if (len(region) == 2):  # para nao repetir a combinacao quando forem apenas 2 vertices na regiao
+                    break
+        final_time = time.clock()
+        print "time to normals:", final_time - init_time
+
+        init_time = time.clock()
+        n_tri = 0
+        for p_index in xrange(len(voronoi.point_region)):
+            p_region_index = voronoi.point_region[p_index]
+            region = voronoi.regions[p_region_index]
+            for i in xrange(len(region)):
+                vert_index1 = region[i]
+                vert_index2 = region[(i+1) % len(region)]
+                if vert_index1 > -1 and vert_index2 > -1 and not removed[vert_index1] and not removed[vert_index2]:
+                    n_tri = n_tri + 1
                     triangles.addVertices(new_indices[vert_index1],
                                           new_indices[vert_index2],
                                           len(new_vertices) + p_index)
                 if (len(region) == 2):  # para nao repetir a combinacao quando forem apenas 2 vertices na regiao
                     break
-
+        final_time = time.clock()
+        print "time to triangulate:",final_time - init_time
+        print "# triangles = ", n_tri
+        
         for i in xrange(all_vertices.shape[0]):
             norm = math.sqrt(normals[i][0] ** 2 + normals[i][1] ** 2 + normals[i][2] ** 2)
             if norm == 0: # no caso de ponto sem triangulos
                 n = [0,0,0]
             else:
                 n = [normals[i][0] / norm, normals[i][1] / norm, normals[i][2] / norm]
+            print normals[i]
             normal.addData3f(n[0], n[1], n[2])
         
         # specifics of panda3d, geom and geomnode and scene graph
@@ -141,7 +190,7 @@ class MyApp(ShowBase):
         # self.directionalLight.getLens().setFov(90)
         self.directionalLight.setShadowCaster(True, 4096, 4096)
         self.directionalLight.getLens().setNearFar(.1, 1000)
-        self.directionalLight.showFrustum()
+        # self.directionalLight.showFrustum()
         self.directionalLightNP = self.render.attachNewNode(self.directionalLight)
         self.directionalLightNP.setPos(20, 20, 100)
         self.directionalLightNP.lookAt(terrainNP)

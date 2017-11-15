@@ -21,7 +21,7 @@ class FractalHeightmap:
     def dsm_heightmap(max=512, max_height=255):
         if not math.log(max, 2).is_integer():
             raise Exception(str(max) + " is not power of two")
-        height = numpy.zeros((max+1, max+1), numpy.float32)
+        height = numpy.zeros((max+1, max+1))
         height[0,0]     = random.uniform(-1,1)
         height[0,max]   = random.uniform(-1,1)
         height[max,0]   = random.uniform(-1,1)
@@ -65,7 +65,7 @@ class FractalHeightmap:
         array_max = numpy.amax(height)
         array_min = numpy.amin(height)
         # print (array_max)
-        final_height = numpy.zeros((max+1, max+1), numpy.uint16)
+        final_height = numpy.zeros((max+1, max+1))
         for x in xrange(0, max+1):
             for y in xrange(0, max+1):
                 # print height[x,y]

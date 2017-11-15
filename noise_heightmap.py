@@ -19,7 +19,7 @@ class NoiseHeightmap:
     
     @staticmethod
     def noise_heightmap(max=512, octaves=4, frequency=16.0, exponent=1.0, max_height=255):
-        height = numpy.zeros((max, max), numpy.uint8)
+        height = numpy.zeros((max, max))
         for x in xrange(max):
             for y in xrange(max):
                 value = NoiseHeightmap.normalize(
